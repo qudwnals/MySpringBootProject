@@ -1,4 +1,4 @@
-package com.basic.myspringboot.runner;
+package com.basic.myspringboot.property;
 
 
 import lombok.Getter;
