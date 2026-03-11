@@ -2,13 +2,17 @@ package com.basic.myspringboot.controller;
 
 import com.basic.myspringboot.entity.User;
 import com.basic.myspringboot.exception.BusinessException;
+import com.basic.myspringboot.repository.CustomerRepository;
 import com.basic.myspringboot.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @Slf4j
@@ -17,41 +21,53 @@ import java.util.List;
 public class UserRestController {
     private final UserRepository userRepository;
 
-
+    //Constructor Injection
 //    public UserRestController(UserRepository userRepository) {
-//        log.info("UserRepository 구현 클래스명 : {}", userRepository.getClass().getName());
+//        log.info("UserRepository 구현클래스명 = {}",userRepository.getClass().getName());
 //        this.userRepository = userRepository;
 //    }
 
     //User 등록
     @PostMapping
-    public User create(@RequestBody User userDetail){
+    public User create(@RequestBody User userDetail) {
         return userRepository.save(userDetail);
     }
 
-    //User 등록 조회
+    //User 목록조회
     @GetMapping
-    public List<User> getUsers()
-    {
+    public List<User> getUsers() {
         return userRepository.findAll();
     }
 
-
+    //Id로 User 조회
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable() Long  id){
-        User existUser = userRepository.findById(id)//Optioanl<User>
-                                .orElseThrow(() -> new BusinessException("User Not Found", HttpStatus.NOT_FOUND));
+    public User getUserById(@PathVariable Long id) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        User existUser = getExistUser(optionalUser);
         return existUser;
-
     }
 
-
+    //Email 조회하고 User 수정하기
     @PatchMapping("/{email}/")
-    public User updateUser(@PathVariable String email, @RequestBody User  userDetail){
-        User existUser =  userRepository.findByEmail(email)
-                .orElseThrow(()-> new BusinessException("User Not Found",HttpStatus.NOT_FOUND));
+    public User updateUser(@PathVariable String email, @RequestBody User userDetail){
+        User existUser = getExistUser(userRepository.findByEmail(email));
         existUser.setName(userDetail.getName());
-
         return userRepository.save(existUser);
     }
+
+    //User 삭제하기
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        User user = getExistUser(optionalUser);
+        userRepository.delete(user);
+        return ResponseEntity.ok("ID = " + id + "User가 삭제 되었습니다.");
+    }
+    //private 공통 메서드
+    private static User getExistUser(Optional<User> optionalUser) {
+        User existUser = optionalUser //Optional<User>
+                .orElseThrow(() -> new BusinessException("User Not Found", HttpStatus.NOT_FOUND));//User
+        return existUser;
+    }
+
 }
